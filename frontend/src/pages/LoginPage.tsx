@@ -23,7 +23,17 @@ export const LoginPage: React.FC = () => {
       toast.success('Đăng nhập thành công!');
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
+      // Fallback Demo Mode for Vercel Deployment
+      if (email === 'admin@goopayrecon.com' && password === 'Admin123!') {
+        toast.success('Đăng nhập Demo Mode (Không có Backend)');
+        login(
+          { id: 1, email: 'admin@goopayrecon.com', username: 'Admin (Demo)', role: 'ADMIN' as any },
+          'demo-jwt-token-vercel'
+        );
+        navigate('/dashboard');
+      } else {
+        toast.error(error.response?.data?.message || 'Đăng nhập thất bại (API Backend không phản hồi)');
+      }
     } finally {
       setLoading(false);
     }
