@@ -42,16 +42,20 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use(notFoundHandler);
 app.use(globalErrorHandler);
 
-// Graceful shutdown
-const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close(async () => {
-    console.log('HTTP server closed');
-    await prisma.$disconnect();
-    process.exit(0);
+// Graceful shutdown - Only run server listen if not in serverless environment
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+  const server = app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
   });
-});
+
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(async () => {
+      console.log('HTTP server closed');
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  });
+}
+
+export default app;

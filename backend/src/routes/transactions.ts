@@ -12,10 +12,17 @@ router.use(authenticate);
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { type, dateFrom, dateTo, partnerCode, connectorCode, parentPartnerCode } = req.query;
+    const { type, dateFrom, dateTo, partnerCode, connectorCode, parentPartnerCode, search } = req.query;
     let where: any = {};
 
     if (type) where.type = type as TransactionType;
+    if (search) {
+      where.OR = [
+        { notes: { contains: search as string, mode: 'insensitive' } },
+        { transactionCode: { contains: search as string, mode: 'insensitive' } },
+        { partnerCode: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = new Date(dateFrom as string);
@@ -55,8 +62,8 @@ router.get('/template/:type/download', (req: Request, res: Response) => {
   const { type } = req.params;
   const isQuyetToan = type.toUpperCase() === 'QUYET_TOAN';
   const headers = isQuyetToan 
-    ? ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch']
-    : ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch', 'Tên ngân hàng'];
+    ? ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch', 'Ghi chú']
+    : ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch', 'Tên ngân hàng', 'Ghi chú'];
   
   const buffer = excelService.generateTemplate(headers, type);
   res.setHeader('Content-Disposition', `attachment; filename="template_${type}.xlsx"`);
@@ -131,8 +138,8 @@ router.post('/upload', authorize(['ADMIN', 'EDITOR']), upload.single('file'), as
   try {
     const isQuyetToan = type === TransactionType.QUYET_TOAN;
     const headers = isQuyetToan 
-      ? ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch']
-      : ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch', 'Tên ngân hàng'];
+      ? ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch', 'Ghi chú']
+      : ['Ngày', 'Mã đối tác', 'Loại giao dịch', 'Số lượng', 'Số tiền', 'Connector', 'Mã giao dịch', 'Tên ngân hàng', 'Ghi chú'];
     
     const rows = excelService.parseExcel(req.file.buffer);
     const data = excelService.rowsToObjects(rows, headers);
@@ -182,6 +189,7 @@ router.post('/upload', authorize(['ADMIN', 'EDITOR']), upload.single('file'), as
             connectorCode: cCode,
             transactionCode: item['Mã giao dịch'] ? String(item['Mã giao dịch']) : null,
             bankName: item['Tên ngân hàng'] ? String(item['Tên ngân hàng']) : null,
+            notes: item['Ghi chú'] ? String(item['Ghi chú']) : null,
           }
         });
         successCount++;

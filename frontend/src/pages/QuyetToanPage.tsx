@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { FileCheck, Upload, Download, Edit2, Trash2, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getTransactions, uploadTransactions, downloadTemplate, deleteTransaction, updateTransaction } from '../api/transactions';
+import { getBalance } from '../api/balance';
 import { getPartners } from '../api/partners';
 import { getConnectors } from '../api/connectors';
-import { Transaction, TransactionType, FilterState, Partner, Connector } from '../types';
+import { Transaction, TransactionType, FilterState, Partner, Connector, CumulativeBalance } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { Button, Modal, Input } from '../components/ui';
 import { DataBoard } from '../components/DataBoard/DataBoard';
@@ -14,7 +15,9 @@ import { formatNumber, formatCurrency, toISODate } from '../utils/formatters';
 
 export const QuyetToanPage: React.FC = () => {
   const [data, setData] = useState<Transaction[]>([]);
+  const [summaryData, setSummaryData] = useState<CumulativeBalance[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'list' | 'summary'>('list');
   const [filters, setFilters] = useState<FilterState>({ fromDate: toISODate(new Date()), toDate: toISODate(new Date()) });
   const [partners, setPartners] = useState<Partner[]>([]);
   const [connectors, setConnectors] = useState<Connector[]>([]);
@@ -28,8 +31,13 @@ export const QuyetToanPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await getTransactions({ ...filters, type: TransactionType.QUYET_TOAN });
-      setData(res);
+      if (activeTab === 'list') {
+        const res = await getTransactions({ ...filters, type: TransactionType.QUYET_TOAN });
+        setData(res);
+      } else {
+        const res = await getBalance(filters);
+        setSummaryData(res);
+      }
     } catch (e) {
       toast.error('Lỗi khi tải dữ liệu');
     } finally {
@@ -44,7 +52,7 @@ export const QuyetToanPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [filters, activeTab]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,7 +114,20 @@ export const QuyetToanPage: React.FC = () => {
     });
   }
 
+  const summaryColumns = [
+    { id: 'partnerCode', header: 'Mã Đối Tác', accessorKey: 'partnerCode', size: 100 },
+    { id: 'partnerName', header: 'Tên Đối Tác', accessorFn: (row: any) => row.partner?.partnerName || '', size: 150 },
+    { id: 'thu', header: 'THU', accessorKey: 'thu', cell: (info: any) => <div className="text-right text-green-400">{formatCurrency(info.getValue())}</div>, size: 120 },
+    { id: 'chi', header: 'CHI', accessorKey: 'chi', cell: (info: any) => <div className="text-right text-red-400">{formatCurrency(info.getValue())}</div>, size: 120 },
+    { id: 'quyetToan', header: 'Quyết Toán', accessorKey: 'quyetToan', cell: (info: any) => <div className="text-right text-purple-400">{formatCurrency(info.getValue())}</div>, size: 120 },
+    { id: 'payable', header: 'Công Nợ', accessorFn: (row: any) => row.thu - row.chi - row.quyetToan, cell: (info: any) => {
+        const val = info.getValue();
+        return <div className={`text-right font-bold ${val > 0 ? 'text-green-500' : val < 0 ? 'text-red-500' : 'text-gray-400'}`}>{formatCurrency(val)} {val > 0 ? '(Phải trả)' : val < 0 ? '(Phải thu)' : ''}</div>;
+    }, size: 150 },
+  ];
+
   const totalAmount = data.reduce((acc, row) => acc + row.amount, 0);
+  const totalPayable = summaryData.reduce((acc, row) => acc + (row.thu - row.chi - row.quyetToan), 0);
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in h-[calc(100vh-100px)]">
@@ -127,6 +148,15 @@ export const QuyetToanPage: React.FC = () => {
         )}
       </div>
 
+      <div className="flex gap-4 border-b border-border-color">
+        <button onClick={() => setActiveTab('list')} className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'list' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-400 hover:text-white'}`}>
+          Danh Sách Giao Dịch
+        </button>
+        <button onClick={() => setActiveTab('summary')} className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'summary' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-400 hover:text-white'}`}>
+          Tổng Hợp Công Nợ
+        </button>
+      </div>
+
       <div className="bg-surface-card border border-border-color rounded-lg p-4 flex gap-4 text-sm">
         <div className="text-gray-300 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
@@ -137,15 +167,30 @@ export const QuyetToanPage: React.FC = () => {
       <ColumnFilter filters={filters} onChange={setFilters} partners={partners} connectors={connectors} />
 
       <div className="flex-1 min-h-0">
-        <DataBoard data={data} columns={columns} isLoading={loading} getRowClassName={(row) => row.isLocked ? 'opacity-70 bg-surface/50' : ''} />
+        {activeTab === 'list' ? (
+          <DataBoard data={data} columns={columns} isLoading={loading} getRowClassName={(row) => row.isLocked ? 'opacity-70 bg-surface/50' : ''} />
+        ) : (
+          <DataBoard data={summaryData} columns={summaryColumns} isLoading={loading} />
+        )}
       </div>
 
-      <div className="shrink-0 glass-card p-4 rounded-lg flex justify-between items-center text-sm font-medium">
-        <div className="text-gray-400">Tổng số dòng: <span className="text-white ml-1">{data.length}</span></div>
-        <div className="flex gap-8">
-          <div className="text-gray-400">Tổng Quyết Toán: <span className="text-purple-400 ml-1 text-lg">{formatCurrency(totalAmount)}</span></div>
+      {activeTab === 'list' && (
+        <div className="shrink-0 glass-card p-4 rounded-lg flex justify-between items-center text-sm font-medium">
+          <div className="text-gray-400">Tổng số dòng: <span className="text-white ml-1">{data.length}</span></div>
+          <div className="flex gap-8">
+            <div className="text-gray-400">Tổng Quyết Toán: <span className="text-purple-400 ml-1 text-lg">{formatCurrency(totalAmount)}</span></div>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {activeTab === 'summary' && (
+        <div className="shrink-0 glass-card p-4 rounded-lg flex justify-between items-center text-sm font-medium">
+          <div className="text-gray-400">Tổng số đối tác: <span className="text-white ml-1">{summaryData.length}</span></div>
+          <div className="flex gap-8">
+            <div className="text-gray-400">Tổng Công Nợ: <span className={`${totalPayable > 0 ? 'text-green-500' : totalPayable < 0 ? 'text-red-500' : 'text-gray-400'} ml-1 text-lg`}>{formatCurrency(totalPayable)}</span></div>
+          </div>
+        </div>
+      )}
 
       <Modal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} title="Upload File Excel - QUYẾT TOÁN" size="md">
         <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-border-color rounded-lg bg-surface hover:border-primary transition-colors">

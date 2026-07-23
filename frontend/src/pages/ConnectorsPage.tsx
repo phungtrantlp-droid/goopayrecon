@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { getConnectors, createConnector, updateConnector, deleteConnector, toggleConnectorActive } from '../api/connectors';
 import { Connector } from '../types';
 import { useAuthStore } from '../store/authStore';
-import { Button, Input, Modal, Badge } from '../components/ui';
+import { Button, Input, Modal, Badge, Switch } from '../components/ui';
 
 export const ConnectorsPage: React.FC = () => {
   const [connectors, setConnectors] = useState<Connector[]>([]);
@@ -60,7 +60,7 @@ export const ConnectorsPage: React.FC = () => {
     }
   };
 
-  const handleToggle = async (code: string) => {
+  const handleToggle = async (code: string, currentStatus: boolean) => {
     try {
       await toggleConnectorActive(code);
       toast.success('Thay đổi trạng thái thành công');
@@ -117,13 +117,19 @@ export const ConnectorsPage: React.FC = () => {
                 <td className="px-4 py-3 font-medium text-white">{c.connectorCode}</td>
                 <td className="px-4 py-3">{c.connectorName}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={c.isActive ? 'green' : 'gray'} showDot>{c.isActive ? 'Hoạt động' : 'Tạm dừng'}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      checked={c.isActive} 
+                      onChange={() => canEdit() ? handleToggle(c.connectorCode, c.isActive) : undefined}
+                      disabled={!canEdit()}
+                    />
+                    <span className={`text-xs ${c.isActive ? 'text-green-400' : 'text-gray-400'}`}>
+                      {c.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                    </span>
+                  </div>
                 </td>
                 {canEdit() && (
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleToggle(c.connectorCode)} title="Đổi trạng thái" className={`p-1.5 rounded mr-2 transition-colors ${c.isActive ? 'text-orange-400 hover:bg-orange-400/10' : 'text-green-400 hover:bg-green-400/10'}`}>
-                      <Power className="w-4 h-4" />
-                    </button>
                     <button onClick={() => { setEditingConnector(c); setFormData(c); setIsModalOpen(true); }} className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded mr-2"><Edit2 className="w-4 h-4" /></button>
                     {isAdmin() && <button onClick={() => handleDelete(c.connectorCode)} className="p-1.5 text-red-400 hover:bg-red-400/10 rounded"><Trash2 className="w-4 h-4" /></button>}
                   </td>

@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { getPartners, createPartner, updatePartner, deletePartner, uploadPartners, downloadTemplate } from '../api/partners';
 import { Partner } from '../types';
 import { useAuthStore } from '../store/authStore';
-import { Button, Input, Modal, Badge, Select } from '../components/ui';
+import { Button, Input, Modal, Badge, Select, Switch } from '../components/ui';
 
 export const PartnersPage: React.FC = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -59,6 +59,16 @@ export const PartnersPage: React.FC = () => {
       fetchPartners();
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Lỗi khi xóa');
+    }
+  };
+
+  const handleToggle = async (code: string, currentStatus: boolean) => {
+    try {
+      await updatePartner(code, { isActive: !currentStatus });
+      toast.success('Đã cập nhật trạng thái');
+      fetchPartners();
+    } catch (e) {
+      toast.error('Lỗi khi đổi trạng thái');
     }
   };
 
@@ -139,7 +149,16 @@ export const PartnersPage: React.FC = () => {
                   <td className="px-4 py-3">{p.partnerName}</td>
                   <td className="px-4 py-3">{p.serviceType}</td>
                   <td className="px-4 py-3">
-                    <Badge variant={p.isActive ? 'green' : 'red'} showDot>{p.isActive ? 'Hoạt động' : 'Đã khóa'}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={p.isActive} 
+                        onChange={() => canEdit() ? handleToggle(p.partnerCode, p.isActive) : undefined}
+                        disabled={!canEdit()}
+                      />
+                      <span className={`text-xs ${p.isActive ? 'text-green-400' : 'text-gray-400'}`}>
+                        {p.isActive ? 'Hoạt động' : 'Đã khóa'}
+                      </span>
+                    </div>
                   </td>
                   {canEdit() && (
                     <td className="px-4 py-3 text-right">
@@ -159,9 +178,19 @@ export const PartnersPage: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <Input label="Mã Đối Tác" value={formData.partnerCode || ''} onChange={(e) => setFormData({...formData, partnerCode: e.target.value})} disabled={!!editingPartner} />
           <Input label="Tên Đối Tác" value={formData.partnerName || ''} onChange={(e) => setFormData({...formData, partnerName: e.target.value})} />
+          <Select 
+            label="Mã ĐT Cha" 
+            value={formData.parentId || ''} 
+            onChange={(e) => setFormData({...formData, parentId: e.target.value})}
+            options={[
+              { value: '', label: 'Không có (Root)' },
+              ...partners.filter(p => p.partnerCode !== formData.partnerCode).map(p => ({ value: p.partnerCode, label: `${p.partnerCode} - ${p.partnerName}` }))
+            ]}
+          />
           <Input label="Loại Dịch Vụ" value={formData.serviceType || ''} onChange={(e) => setFormData({...formData, serviceType: e.target.value})} />
           <Input label="Email" type="email" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} />
           <Input label="Ngân Hàng" value={formData.bankName || ''} onChange={(e) => setFormData({...formData, bankName: e.target.value})} />
+          <Input label="Tên Tài Khoản" value={formData.accountName || ''} onChange={(e) => setFormData({...formData, accountName: e.target.value})} />
           <Input label="Số Tài Khoản" value={formData.bankAccount || ''} onChange={(e) => setFormData({...formData, bankAccount: e.target.value})} />
         </div>
       </Modal>

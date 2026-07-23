@@ -88,4 +88,13 @@ export const standardTransactionColumns: ColumnDef<Transaction, any>[] = [
     enableResizing: true,
     enableSorting: true,
   },
+  {
+    id: 'notes',
+    header: 'Ghi chú',
+    accessorKey: 'notes',
+    size: 200,
+    minSize: 100,
+    enableResizing: true,
+    enableSorting: true,
+  },
 ];

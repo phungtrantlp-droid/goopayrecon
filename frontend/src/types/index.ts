@@ -57,6 +57,7 @@ export interface Transaction {
   quantity: number;
   amount: number;
   isLocked: boolean;
+  notes?: string;
   partner?: Partner;
   connector?: Connector;
   createdAt: string;
@@ -125,6 +126,7 @@ export interface FilterState {
   serviceType?: string;
   year?: number;
   month?: number;
+  search?: string;
 }
 
 export interface UploadResult {

@@ -51,6 +51,12 @@ export const ColumnFilter: React.FC<ColumnFilterProps> = ({ filters, onChange, p
       {isOpen && (
         <div className="p-4 border-t border-border-color grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in">
           <Input 
+            label="Tìm kiếm" 
+            placeholder="Tìm kiếm..." 
+            value={filters.search || ''} 
+            onChange={(e) => handleChange('search', e.target.value)} 
+          />
+          <Input 
             type="date" 
             label="Từ ngày" 
             value={filters.fromDate || ''} 

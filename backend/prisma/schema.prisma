@@ -76,6 +76,7 @@ model Transaction {
   connector       Connector       @relation(fields: [connectorCode], references: [connectorCode])
   transactionCode String?         @map("transaction_code")
   bankName        String?         @map("bank_name")
+  notes           String?
   isLocked        Boolean         @default(false) @map("is_locked")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
