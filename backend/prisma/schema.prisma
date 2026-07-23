@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum TransactionType {
+  THU
+  CHI
+  QUYET_TOAN
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(VIEWER)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Partner {
+  partnerCode   String    @id @map("partner_code")
+  partnerName   String    @map("partner_name")
+  parentId      String?   @map("parent_id")
+  parent        Partner?  @relation("PartnerHierarchy", fields: [parentId], references: [partnerCode])
+  children      Partner[] @relation("PartnerHierarchy")
+  email         String?
+  serviceType   String?   @map("service_type")
+  notes         String?
+  isActive      Boolean   @default(true) @map("is_active")
+  accountName   String?   @map("account_name")
+  accountNumber String?   @map("account_number")
+  bankName      String?   @map("bank_name")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  transactions  Transaction[]
+
+  @@map("partners")
+}
+
+model Connector {
+  connectorCode String        @id @map("connector_code")
+  connectorName String        @map("connector_name")
+  isActive      Boolean       @default(true) @map("is_active")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  transactions  Transaction[]
+
+  @@map("connectors")
+}
+
+model Transaction {
+  id              Int             @id @default(autoincrement())
+  date            DateTime        @db.Date
+  partnerCode     String          @map("partner_code")
+  partner         Partner         @relation(fields: [partnerCode], references: [partnerCode])
+  type            TransactionType
+  transactionType String?         @map("transaction_type")
+  quantity        Int             @default(0)
+  amount          Decimal         @default(0) @db.Decimal(18, 2)
+  connectorCode   String          @map("connector")
+  connector       Connector       @relation(fields: [connectorCode], references: [connectorCode])
+  transactionCode String?         @map("transaction_code")
+  bankName        String?         @map("bank_name")
+  isLocked        Boolean         @default(false) @map("is_locked")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@map("transactions")
+}

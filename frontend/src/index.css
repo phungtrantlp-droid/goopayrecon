@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-[#e6edf3] bg-[#0d1117] antialiased selection:bg-accent selection:text-surface-dark;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* Table overrides */
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  background: transparent;
+}
+
+.resizer:hover, .resizer.isResizing {
+  background: #00d4aa;
+  opacity: 0.5;
+}
+
+.glass-card {
+  background: rgba(22, 27, 34, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(48, 54, 61, 0.8);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #00d4aa, #0f4c81);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium rounded-md px-4 py-2;
+  }
+  .btn-secondary {
+    @apply bg-surface-card text-white hover:bg-surface-light border border-border-color disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium rounded-md px-4 py-2;
+  }
+  .btn-danger {
+    @apply bg-[#f85149] text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium rounded-md px-4 py-2;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium rounded-md px-4 py-2;
+  }
+}
