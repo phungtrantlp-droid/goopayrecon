@@ -6,14 +6,14 @@
       "use": "@vercel/vite"
     },
     {
-      "src": "api/index.ts",
+      "src": "api/[[...slug]].ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api"
+      "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
