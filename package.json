@@ -2,7 +2,7 @@
   "name": "goopayrecon",
   "private": true,
   "scripts": {
-    "build": "npx prisma generate && cd frontend && npm install && npm run build && cd .. && rm -rf public && cp -r frontend/dist public && cd backend && npm install",
+    "build": "npm install && npx prisma generate && cd frontend && npm install && npm run build && cd ../backend && npm install",
     "postinstall": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "ts-node prisma/seed.ts"
